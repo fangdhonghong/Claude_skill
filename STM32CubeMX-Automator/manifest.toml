@@ -1,0 +1,13 @@
+name = "stm32-cubemx-automator"
+description = "通过修改 STM32 的 .ioc 配置文件并静默调用 STM32CubeMX CLI，实现硬件驱动代码的自动生成。"
+version = "1.0.0"
+
+[hooks]
+trigger_on = ["stm32", "cubemx", "ioc", "生成代码", "stm32代码生成", "cubemx自动化"]
+
+[permissions]
+allow = ["read", "write", "exec"]
+
+[settings]
+timeout = 60000
+max_retries = 3
