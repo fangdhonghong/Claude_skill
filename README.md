@@ -11,7 +11,7 @@
 
 | Skill 名称 | 适用领域 | 核心功能 | 触发前提/依赖 |
 | :--- | :--- | :--- | :--- |
-| **[STM32CubeMX-Automator](./skills/STM32CubeMX-Automator)** | 嵌入式 (STM32) | 自动配置外设与引脚，生成初始化代码 | 需先创建 `.ioc` 文件并配置好时钟树 |
-| **[debug_skill](./skills/debug_skill)** | 嵌入式调试 | 辅助分析 GDB 调试日志、寄存器状态及硬件异常（如 HardFault） | 适用于固件运行时或编译期排错 |
-| **[Logic Whetstone](./skills/Logic_Whetstone)** | 架构/逻辑设计 | 采用批判性“拷打式”追问，检验系统设计漏洞 | 适用于方案设计、协议制定等前期阶段 |
-| **[Ousterhout-Mode](./skills/Ousterhout-Mode)** | 软件重构 | 基于《软件设计之道》消除设计红旗，构建深层模块 | 适用于代码审查、接口设计与模块重构 |
+| **[STM32CubeMX-Automator](https://github.com/fangdhonghong/Claude_skill/tree/main/STM32CubeMX-Automator)** | 嵌入式 (STM32) | 自动配置外设与引脚，生成初始化代码 | 需先创建 `.ioc` 文件并配置好时钟树 |
+| **[debug_skill](https://github.com/fangdhonghong/Claude_skill/tree/main/debug_skill)** | 嵌入式调试 | 辅助分析 GDB 调试日志、寄存器状态及硬件异常（如 HardFault） | 适用于固件运行时或编译期排错 |
+| **[Logic Whetstone](https://github.com/fangdhonghong/Claude_skill/tree/main/Logic-Whetstone)** | 架构/逻辑设计 | 采用批判性“拷打式”追问，检验系统设计漏洞 | 适用于方案设计、协议制定等前期阶段 |
+| **[Ousterhout-Mode](https://github.com/fangdhonghong/Claude_skill/tree/main/Ousterhout-Mode)** | 软件重构 | 基于《软件设计之道》消除设计红旗，构建深层模块 | 适用于代码审查、接口设计与模块重构 |
