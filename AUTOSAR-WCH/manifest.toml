@@ -1,0 +1,12 @@
+name = "autosar-wch"
+description = "基于 AUTOSAR 架构风格和 Ousterhout 软件设计哲学的 WCH RISC-V MCU 三层解耦架构开发规范。触发词：设计功能、重构代码、创建新模块、WCH架构、App Bsp Mcal"
+version = "1.0.0"
+
+[hooks]
+trigger_on = ["设计功能", "重构代码", "创建新模块", "WCH架构", "App Bsp Mcal", "三层架构"]
+
+[permissions]
+allow = ["read", "write"]
+
+[settings]
+timeout = 120000
