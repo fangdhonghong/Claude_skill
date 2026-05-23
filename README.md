@@ -15,4 +15,4 @@
 | **[debug_skill](https://github.com/fangdhonghong/Claude_skill/tree/main/debug_skill)** | 嵌入式调试 | 辅助分析 GDB 调试日志、寄存器状态及硬件异常（如 HardFault） | 适用于固件运行时或编译期排错 |
 | **[Logic Whetstone](https://github.com/fangdhonghong/Claude_skill/tree/main/Logic-Whetstone)** | 架构/逻辑设计 | 采用批判性“拷打式”追问，检验系统设计漏洞 | 适用于方案设计、协议制定等前期阶段 |
 | **[Ousterhout-Mode](https://github.com/fangdhonghong/Claude_skill/tree/main/Ousterhout-Mode)** | 软件重构 | 基于《软件设计之道》消除设计红旗，构建深层模块 | 适用于代码审查、接口设计与模块重构 |
-| **[AUTOSAR-WCH](https://github.com/fangdhonghong/Claude_skill/tree/main/Ousterhout-Mode)** | 嵌入式 (WCH RISC-V) | 依据三层解耦架构 (App/Bsp/Mcal) 进行代码规范化设计 | 需先在MounRiver Studio中创建项目，并把后续的文件添加到项目中 |
+| **[AUTOSAR-WCH](https://github.com/fangdhonghong/Claude_skill/tree/main/AUTOSAR-WCH)** | 嵌入式 (WCH RISC-V) | 依据三层解耦架构 (App/Bsp/Mcal) 进行代码规范化设计 | 需先在MounRiver Studio中创建项目，并把后续的文件添加到项目中 |
