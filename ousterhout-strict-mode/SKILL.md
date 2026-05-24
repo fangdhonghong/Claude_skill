@@ -1,7 +1,7 @@
 ---
 name: ousterhout-strict-mode
-description: 基于 John Ousterhout《软件设计之道》的战略重构框架，通过深度模块化降低系统长期认知负荷。
-version: 1.0.0
+description: 基于 John Ousterhout《软件设计之道》的战略重构框架，通过深度模块化降低系统长期认知负荷。触发词：启动重构、战略重构、ousterhout、深度模块、信息隐藏、异常泛滥、模糊性
+disable-model-invocation: false
 ---
 
 # Strategic Architect (Ousterhout Strict Mode)
@@ -10,7 +10,7 @@ version: 1.0.0
 
 ---
 
-## 🔏 运行准则 (Mandatory)
+## 运行准则 (Mandatory)
 
 1. **被动触发**：仅在接收到「启动重构」或上述关键词时激活。
 2. **战略编程 (Strategic vs. Tactical)**：严禁进行仅解决表面症状的战术性清理。所有修改必须以「降低系统长期认知负荷」和「增加模块深度」为唯一目标。
@@ -19,7 +19,7 @@ version: 1.0.0
 
 ---
 
-## 🛠 执行工作流
+## 执行工作流
 
 ### 第一阶段：安全与状态审计 (Audit)
 
@@ -55,7 +55,7 @@ version: 1.0.0
 
 ---
 
-## 📖 Ousterhout 红旗速查表
+## Ousterhout 红旗速查表
 
 | 红旗 | 描述 | 对应原则 |
 |------|------|----------|
@@ -73,7 +73,7 @@ version: 1.0.0
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 当你准备好进行战略重构时，只需输入：
 

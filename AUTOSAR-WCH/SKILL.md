@@ -1,7 +1,7 @@
 ---
 name: autosar-wch
-description: 基于 AUTOSAR 架构风格和 Ousterhout 软件设计哲学的 WCH RISC-V MCU 三层解耦架构开发规范。触发词：设计功能、重构代码、创建新模块、WCH架构、App Bsp Mcal
-version: 1.0.0
+description: 基于 AUTOSAR 架构风格和 Ousterhout 软件设计哲学的 WCH RISC-V MCU 三层解耦架构开发规范。触发词：设计功能、重构代码、创建新模块、WCH架构、App Bsp Mcal、三层架构
+disable-model-invocation: false
 ---
 
 # AUTOSAR-WCH Architecture Guide
@@ -10,7 +10,7 @@ version: 1.0.0
 
 ---
 
-## 🔏 运行准则
+## 运行准则
 
 1. **主动引导**：用户在 MounRiver Studio 下开发 WCH RISC-V MCU 项目时，以此规范作为架构决策的唯一标准。
 2. **三层解耦 (App -> Bsp -> Mcal)**：严禁跨越层级调用或反向依赖。
@@ -20,7 +20,7 @@ version: 1.0.0
 
 ---
 
-## 🏗 架构分层规范
+## 架构分层规范
 
 ### 1. User/main.c - 组合根 (Composition Root)
 
@@ -52,7 +52,7 @@ version: 1.0.0
 
 ---
 
-## 📐 精密命名规范
+## 精密命名规范
 
 1. **严禁浅名字 (Vague Names)**：
    - 绝对禁止：`data`、`status`、`val`、`temp`（易与温度/临时变量混淆）、`res`、`flag`、`count`、`len` 等。
@@ -65,7 +65,7 @@ version: 1.0.0
 
 ---
 
-## ✍️ 奥斯特豪特注释规范
+## 奥斯特豪特注释规范
 
 ### 头文件 (.h) 接口注释：只关注 "What"
 
@@ -108,7 +108,7 @@ I2C_GenerateSTART(I2C1, ENABLE); // 开启I2C1起始信号
 
 ---
 
-## 🚀 执行动作
+## 执行动作
 
 当用户要求"设计功能"、"重构代码"或"创建新模块"时，必须严格遵守以下步骤：
 
@@ -135,7 +135,7 @@ I2C_GenerateSTART(I2C1, ENABLE); // 开启I2C1起始信号
 
 ---
 
-## 📁 目录结构约定
+## 目录结构约定
 
 ```
 User/           - 组合根（main.c + 中断跳板）
