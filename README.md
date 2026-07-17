@@ -15,3 +15,4 @@
 | **[logic-whetstone](https://github.com/fangdhonghong/Claude_skill/tree/main/logic-whetstone)** | 架构/逻辑设计 | 采用批判性”拷打式”追问，检验系统设计漏洞 | 适用于方案设计、协议制定等前期阶段 |
 | **[ousterhout-strict-mode](https://github.com/fangdhonghong/Claude_skill/tree/main/ousterhout-strict-mode)** | 软件重构 | 基于《软件设计之道》消除设计红旗，构建深层模块 | 适用于代码审查、接口设计与模块重构 |
 | **[autosar-wch](https://github.com/fangdhonghong/Claude_skill/tree/main/autosar-wch)** | 嵌入式 (WCH RISC-V) | 依据三层解耦架构 (App/Bsp/Mcal) 进行代码规范化设计 | 需先在MounRiver Studio中创建项目，并把后续的文件添加到项目中 |
+| **[strict-stm32](https://github.com/fangdhonghong/strict-stm32-skill)** | 嵌入式 (STM32) | STM32 强约束工作流：CubeMX 一次性产骨架 + AI 增量演进，反幻觉（写代码前必读 HAL/CMSIS 头文件）、对话式询问关键硬件决策、HARDWARE.md 作为真相源强制同步 | 需先用 CubeMX 6.10+ 生成 CMake 工程，配齐 gcc-arm-none-eabi 工具链 |
