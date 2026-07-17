@@ -1,0 +1,103 @@
+# 硬件配置（真相源）
+
+> ⚠️ `.ioc` 已冻结，此文件是硬件配置的唯一真相源。
+> CubeMX 仅用于首次工程生成，**禁止**在 CubeMX 内启用/修改任何外设。
+> 时钟改动强制走"重新跑 CubeMX"流程，不允许直接改 `main.c::SystemClock_Config()`。
+
+---
+
+## MCU
+
+- **型号**：<STM32H775BG / F407VET6 / ...>
+- **Revision**：<V / Y / ...>
+- **主频**：<480 MHz / 168 MHz / ...>
+- **板子**：<WeAct Studio H7 / 正点原子 Apollo / 自制板>
+
+## 时钟
+
+（来自 CubeMX 一次性生成，AI 不动 SystemClock_Config）
+
+- **HSE**：<25 MHz / 8 MHz>
+- **PLL 配置**：<M=5, N=192, P=2, Q=8>
+- **SYSCLK**：<480 MHz>
+- **AHB**：<240 MHz>
+- **APB1**：<120 MHz>
+- **APB2**：<240 MHz>
+- **HAL Tick**：<1 kHz>
+
+---
+
+## 外设配置表
+
+| 外设 | 实例 | 引脚 | 关键参数 | 启用日期 |
+|---|---|---|---|---|
+| GPIO | LED | PC0-PC7 | 推挽输出, 2MHz, 默认低 | YYYY-MM-DD |
+| GPIO | KEY | PC13 | 上拉输入, 默认高 | YYYY-MM-DD |
+| UART | USART3 | PD8(TX)/PD9(RX) | 115200 8N1 无流控 | YYYY-MM-DD |
+| I2C | I2C1 | PB6(SCL)/PB7(SDA) | 400kHz, 7-bit addr | YYYY-MM-DD |
+| SPI | SPI1 | PA5/PA6/PA7 | CPOL=1 CPHA=1, 分频 8 | YYYY-MM-DD |
+| TIM | TIM6 | - | 1kHz 中断（HAL Tick 备用） | YYYY-MM-DD |
+| ADC | ADC1 | PA0 | 12-bit, 采样时间 15 cycles | YYYY-MM-DD |
+
+（按需增删行，保持一行一个实例）
+
+---
+
+## 中断分配表
+
+> STM32 NVIC 默认 4-bit 抢占优先级（NVIC_PriorityGroup_4）。
+> 优先级约定：
+> - 0-1：系统核心（HAL Tick、RTOS 调度器）
+> - 2-4：关键实时控制（电机控制、传感器采样）
+> - 5-7：通信外设（UART、SPI、I2C）
+> - 8-15：低优先级（LED、按键）
+
+| IRQ | 用途 | 优先级（抢占:子） | 启用日期 |
+|---|---|---|---|
+| SysTick_IRQn | HAL Tick | 0:0 | YYYY-MM-DD |
+| USART3_IRQn | 串口接收 | 5:0 | YYYY-MM-DD |
+
+---
+
+## DMA 通道分配表
+
+（如未使用 DMA，此表留空）
+
+| DMA | 流/通道 | 外设请求 | 方向 | 用途 | 启用日期 |
+|---|---|---|---|---|---|
+| DMA1 | Stream 0 / CH2 | USART3_RX | 外设→内存 | 串口接收缓冲 | YYYY-MM-DD |
+| DMA1 | Stream 1 / CH4 | SPI1_TX | 内存→外设 | SPI 发送 | YYYY-MM-DD |
+
+---
+
+## 外设芯片地址表
+
+（如未使用外设芯片，此表留空）
+
+| 芯片 | 总线 | 地址 | 备注 | 启用日期 |
+|---|---|---|---|---|
+| MPU6050 | I2C1 | 0x68 | AD0 拉低 | YYYY-MM-DD |
+| SSD1306 OLED | I2C1 | 0x3C | SA0 拉低 | YYYY-MM-DD |
+| W25Q128 Flash | SPI1 | - | CS = PA4 | YYYY-MM-DD |
+
+---
+
+## 引脚占用总览
+
+> 全局视角看哪些 GPIO 已被占用，避免新外设选引脚时冲突。
+
+| GPIO | 功能 | 来源 |
+|---|---|---|
+| PA0 | ADC1_IN0 | ADC |
+| PA4 | W25Q128 CS | SPI1（软件控制） |
+| PA5 | SPI1_SCK | SPI1 |
+| PA6 | SPI1_MISO | SPI1 |
+| PA7 | SPI1_MOSI | SPI1 |
+| PB6 | I2C1_SCL | I2C1 |
+| PB7 | I2C1_SDA | I2C1 |
+| PC0-PC7 | LED | GPIO 输出 |
+| PC13 | KEY | GPIO 输入 |
+| PD8 | USART3_TX | USART3 |
+| PD9 | USART3_RX | USART3 |
+
+（这个表帮助 AI 在选引脚时快速看哪些已被占用）

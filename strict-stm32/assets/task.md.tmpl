@@ -1,0 +1,176 @@
+# 任务：<task-name>
+
+> 这个文件是本次任务的"行车记录仪"。用户审计这份日志 5 分钟，比读 500 行 C 代码快 10 倍。
+> **每条 AI 决策必须带文件路径或行号引用**，不允许"基于常识"这种空话 —— 这是反幻觉的关键。
+
+---
+
+## 元信息
+
+- **日期**：YYYY-MM-DD
+- **类型**：【脚手架】/【正式功能】
+- **关联婴儿步**：PROJECT.md 步骤 N/M
+- **状态**：⏳ 进行中 / ✅ 编译通过 / ⚠️ 编译通过但硬件未测试 / ✅ 完整验证通过
+
+---
+
+## 用户需求（原文）
+
+> 把用户提的原始需求复制在这里，不动一行。
+
+<例："帮我写 MPU6050 6 轴数据输出（不要温度），datasheet 在 hw/datasheets/MPU6050.pdf，量程因子我忘了你应该帮我确认">
+
+---
+
+## 信息源（Read 过的文件）
+
+> 列出本次任务中 AI 实际 Read 的 HAL/CMSIS/datasheet 文件。这是反幻觉硬约束（SR4）的执行记录。
+
+- `code/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_i2c.h`
+- `code/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_gpio_ex.h`
+- `code/Drivers/CMSIS/Device/ST/STM32H7xx/Include/stm32h7xx.h`
+- `code/Core/Inc/stm32h7xx_hal_conf.h`（确认 `HAL_I2C_MODULE_ENABLED` 状态）
+- `code/cmake/stm32cubemx/CMakeLists.txt`（确认 HAL 源列表是否含 stm32h7xx_hal_i2c.c）
+- `hw/datasheets/MPU-6000-6050-Register-Map.pdf`（p.14, p.35）
+- `HARDWARE.md`（查现有 I2C 配置）
+
+---
+
+## 用户决策（来自对话）
+
+> 列出用户在本次任务对话中做出的决策，每条标日期。
+
+- **2026-07-16** I2C1 + PB6(SCL)/PB7(SDA)
+- **2026-07-16** 加速度量程 ±8g（4096 LSB/g）
+- **2026-07-16** 陀螺仪 ±1000 °/s（32.8 LSB/(°/s)）
+- **2026-07-16** 采样率 1kHz, DLPF 41Hz（接受默认）
+- **2026-07-16** 中断读取（INT 接 PG8）
+- **2026-07-16** AD0 拉低（I2C 地址 0x68）
+
+---
+
+## AI 决策（基于事实数据）
+
+> 列出 AI 自己做的决策，每条带文件路径或行号引用。**没有引用的决策视为可疑。**
+
+- **GPIO AF**：`GPIO_AF4_I2C1`（来源：`code/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_gpio_ex.h:189`）
+- **I2C 时序**：400kHz Fast Mode，7-bit 地址（来源：`stm32h7xx_hal_i2c.h: I2C_InitTypeDef` 字段）
+- **HAL 模块启用**：在 `code/Core/Inc/stm32h7xx_hal_conf.h:138` 取消注释 `#define HAL_I2C_MODULE_ENABLED`（SR1 约束：只动这类宏）
+- **MPU6050 寄存器地址**：`WHO_AM_I` = `0x75`、`PWR_MGMT_1` = `0x6B`、`ACCEL_CONFIG` = `0x1C`、`GYRO_CONFIG` = `0x1B`（来源：`hw/datasheets/MPU6050.pdf` Register Map p.14）
+- **量程位**：`AFS_SEL=2`（±8g，加速度）、`FS_SEL=2`（±1000°/s，陀螺仪）（来源：datasheet p.14-15）
+- **LSB 灵敏度**：±8g → 4096 LSB/g，±1000°/s → 32.8 LSB/(°/s)（来源：datasheet p.15 表格）
+
+---
+
+## 代码改动
+
+### 新增
+
+- `driver/driver_i2c.c/.h` —— I2C1 通用驱动（包 HAL_I2C_*，提供 `driver_i2c_read_reg(bus, dev_addr, reg)` 等单例 API）
+- `bsp/bsp_mpu6050.c/.h` —— MPU6050 寄存器层（init / read_accel / read_gyro）
+- `app/app_motion.c/.h` —— 占位（用户未要求业务逻辑，留空函数 `app_motion_init/step`）
+
+### 修改
+
+- `code/Core/Src/main.c` —— `USER CODE BEGIN Includes` 加 `#include "driver_i2c.h"` 等；`USER CODE BEGIN 2` 加 `driver_i2c_init() / bsp_mpu6050_init()` 调用
+- `code/Core/Inc/stm32h7xx_hal_conf.h:138` —— 取消注释 `HAL_I2C_MODULE_ENABLED`（只动这一个宏，其余不碰，SR1）
+- `code/CMakeLists.txt` —— 顶层 `target_sources` 追加 `driver/driver_i2c.c bsp/bsp_mpu6050.c app/app_motion.c`，并在启用新 HAL 模块时补 `Drivers/.../Src/stm32h7xx_hal_i2c.c`
+
+### 删除
+
+（无）
+
+---
+
+## CMake 影响
+
+- ⚠️ 本工程 cubemx 子目录 CMake 把 HAL 源文件硬编码在 `code/cmake/stm32cubemx/CMakeLists.txt` 的 `STM32_Drivers_Src` 变量里（按 `.ioc` 状态生成，没用 `file(GLOB)`）。**新增 HAL 源文件必须手动加到顶层 `code/CMakeLists.txt` 的 `target_sources`**。
+- ✅ `driver/`、`bsp/`、`app/` 源文件路径用 `driver/foo.c` 形式加到顶层 `target_sources`（driver/bsp/app 在 code/ 下，不带 `../`）
+- ✅ include path 用 `driver bsp app` 加到顶层 `target_include_directories`
+- ✅ 编译命令：`cd code/ && cmake --preset Debug && cmake --build build/Debug`（不是直接 `cmake -B build`，要走 preset 才用 `cmake/gcc-arm-none-eabi.cmake` 工具链）
+
+---
+
+## 编译验证
+
+```
+✅ cd code/ && cmake --preset Debug —— 配置通过（GNU arm-none-eabi）
+✅ cmake --build build/Debug —— 编译通过（0 warnings, 0 errors）
+
+构建产物：
+- code/build/Debug/<project>.elf（XX KB code, XX KB data, XX KB RAM）
+- （CubeMX 默认不出 .hex/.bin，需要可在 CMake 加 objcopy post-build）
+```
+
+---
+
+## 烧录验证清单
+
+> AI 无硬件，无法烧录测试。**烧录后按以下清单逐项确认**，挂了某项就反馈给 AI 定位。
+
+烧录 `build/<project>.hex` 后，按顺序确认：
+
+### 第一层：基础启动
+
+- [ ] 上电后 LED 心跳（PC0 每 500ms 翻转）—— 说明 HAL_Init + SystemClock 正常
+
+### 第二层：MPU6050 通信
+
+- [ ] 串口输出 "MPU6050 init OK" —— 说明 I2C 总线通了 + WHO_AM_I 读到 0x68
+- [ ] 串口周期输出 6 轴数据（每 100ms 一次）
+
+### 第三层：数据合理性
+
+- [ ] 静态平放：加速度 Z ≈ 9.8 m/s²（±0.2 容差），X/Y ≈ 0
+- [ ] 静态平放：陀螺仪三轴 ≈ 0（±0.5 °/s 容差）
+- [ ] 手动晃动：对应轴数据变化（X 晃动 → accel_x 大幅波动）
+
+### 失败时怎么定位
+
+- **第一层失败**：检查启动文件、链接脚本、时钟配置（基本不会错，CubeMX 一次性产）
+- **第二层 "init OK" 没打印**：检查 I2C 引脚 AF（应是 `GPIO_AF4_I2C1`）、上拉电阻、AD0 引脚（地址 0x68 vs 0x69）
+- **第二层 WHO_AM_I 读不到 0x68**：检查 I2C 时钟（400kHz）、上拉电阻、线路连接
+- **第三层数据全 0**：检查 MPU6050 是否退出睡眠（写 `PWR_MGMT_1 = 0x00`）
+- **第三层数据溢出**（如 ±32767）：量程设置错，检查 init 函数里的 `AFS_SEL/GFS_SEL`
+
+---
+
+## HARDWARE.md 同步
+
+✅ 已更新（SR7 强制）：
+
+- "外设配置表"追加 I2C1 / PB6/PB7 / 400kHz 行
+- "中断分配表"追加 EXTI8 (PG8) / MPU6050 DRDY / 优先级 5:0 行
+- "外设芯片地址表"追加 MPU6050 / I2C1 / 0x68 / AD0 拉低 行
+- "引脚占用总览"追加 PB6/PB7/PG8 行
+
+---
+
+## PROJECT.md 同步
+
+✅ 已更新：
+
+- "婴儿步路线图"步骤 3 标 `[x]`
+- "关键决策摘要"追加 2026-07-16 I2C1/PB6/PB7 决策
+- "历史任务索引"追加本任务
+
+---
+
+## 死代码扫描
+
+> AI 主动扫描（不强制清理），列出可能可以删的死代码：
+
+（如有）
+
+- `code/Core/Src/stm32h7xx_hal_msp.c:45-50` —— CubeMX 产的 `HAL_I2C_MspInit()` 空函数，可保留（驱动已在 driver_i2c.c 自己做 MspInit 的工作）
+- （本次无其他死代码）
+
+---
+
+## 待用户确认 / 后续
+
+> 列出未决事项、推荐后续动作。
+
+- ⚠️ **AD0 引脚**：用户未明确确认。AI 假设拉低（地址 0x68）。如果板子原理图上是拉高，需改 `bsp_mpu6050.c` 的 `MPU6050_I2C_ADDR` 宏。
+- 💡 **下一步建议**：在 app/app_motion.c 里加姿态解算（Mahony/Madgwick 滤波），把 6 轴原始数据融合成欧拉角。
+- 💡 **后续婴儿步**：在串口加命令 `DUMP` 打印 6 轴数据，验证 I2C 读取持续稳定。
