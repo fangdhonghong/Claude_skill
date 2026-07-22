@@ -1,0 +1,19 @@
+# 本地真实配置(模板 rosdev.conf.template 保留,真实 rosdev.conf 不推)
+rosdev.conf
+
+# OS / 编辑器
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志 / 临时
+*.log
+tmp/
+
+# sysroot / 构建产物(万一在仓库目录里跑过)
+sysroot/
+build/
+install/

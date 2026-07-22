@@ -1,0 +1,15 @@
+# ===== ros-board-dev 配置 =====
+# 由 onboarding 从本模板填充，落 ~/.rosdev/rosdev.conf
+# 标记：[问]=用户提供  [探]=AI SSH/本地探测  [派生]=自动算  [后期]=首次 build 后补
+# 铁律：任何值 AI 缺就问、绝不自己编，也不塞默认假设值。
+
+BOARD_USER="{{BOARD_USER}}"               # [问] 板子登录用户名
+BOARD_HOST="{{BOARD_HOST}}"               # [问] 板子 IP（跨局域网填 Tailscale IP）
+BOARD_ADDR="$BOARD_USER@$BOARD_HOST"      # [派生] 自动拼，别改
+ROS_DISTRO="{{ROS_DISTRO}}"               # [探] ssh 'ls /opt/ros' 取
+BOARD_HOME="{{BOARD_HOME}}"               # [探] ssh 'echo $HOME' 取
+PROJ="{{PROJ}}"                           # [探] 找到的已有 colcon workspace 路径
+PROJ_NAME="{{PROJ_NAME}}"                 # [派生] 从 package.xml / 目录名
+BINARY="{{BINARY}}"                       # [后期] 首次 colcon build 后补；空=还没节点
+SYSROOT="{{SYSROOT}}"                     # [问] PC sysroot 根（~/sysroot 或绝对路径都行）
+SYSROOT="${SYSROOT/#\~/$HOME}"            # [自愈] 展开 ~/ 前缀：脚本在双引号里 $SYSROOT/... 拼接，~ 不展开会建字面 ~ 目录

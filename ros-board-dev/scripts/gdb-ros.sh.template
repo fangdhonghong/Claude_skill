@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# 板端 gdb 包装：先 source ROS 运行时（install/setup.bash），再启 gdb。
+# 否则 ROS2 节点会在 rclcpp::init 处崩（缺运行时环境变量）。
+#
+# {{PROJ}} 由 PC 端 setup 时填充后推到板子（板子没有 rosdev.conf）。
+# $HOME / $@ 保持字面，留给板端 bash 运行时解释。
+source "$HOME/{{PROJ}}/install/setup.bash" 2>/dev/null || true
+exec gdb "$@"
