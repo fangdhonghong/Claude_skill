@@ -83,11 +83,11 @@ code/Drivers/
 
 **为什么**：训练数据对经典芯片覆盖好，对近年新芯片覆盖差。不查 PDF 凭记忆写冷门芯片 = 必错。
 
-## middleware 的真值源：协议规范与帧格式定义
+## components 的真值源：协议规范与帧格式定义
 
-写 `middleware/`（纯软件层）代码前，**不读 HAL 头文件**（middleware 不依赖硬件）。真值源是协议规范：
+写 `components/`（纯软件层）代码前，**不读 HAL 头文件**（components 不依赖硬件）。真值源是协议规范：
 
-| middleware 内容 | 真值源 |
+| components 内容 | 真值源 |
 |---|---|
 | 协议解析（帧头/切帧/长度字段） | 协议文档 / 用户提供的帧格式定义 |
 | CRC 校验 | 标准 CRC 规范（如 CRC-16/MODBUS 多项式 0x8005，初始值 0xFFFF） |

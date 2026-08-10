@@ -6,7 +6,7 @@
 
 1. [CubeMX 6.x CMake 真实结构](#cubemx-6x-cmake-真实结构)
 2. [顶层 CMakeLists.txt 是 AI 可动的第二个例外](#顶层-cmakeliststxt-是-ai-可动的第二个例外)
-3. [加 driver/bsp/middleware/app/sandbox 源文件](#加-driverbspmiddlewareappsandbox-源文件)
+3. [加 driver/bsp/components/app/sandbox 源文件](#加-driverbspcomponentsappsandbox-源文件)
 4. [启用新 HAL 模块（必须改两处）](#启用新-hal-模块必须改两处)
 5. [include path 配置](#include-path-配置)
 6. [跨层 include 单向约束的实现](#跨层-include-单向约束的实现)
@@ -31,14 +31,14 @@ project_root/                              ← AI 工作目录
     ├── Core/ Drivers/
     ├── driver/                            ← AI 加（在 code/ 下）
     ├── bsp/                               ← AI 加（在 code/ 下）
-    ├── middleware/
+    ├── components/
     │   ├── protocol/                      ← AI 加（在 code/ 下）
     │   └── utils/                         ← AI 加（在 code/ 下）
     ├── app/                               ← AI 加（在 code/ 下）
     └── ...
 ```
 
-`code/` 是 CubeMX 工程目录名（用户也可以用项目名如 `cs/`），driver/bsp/middleware/app 永远在 `code/` **里面**（与 Core/ Drivers/ 平级）。从 `code/CMakeLists.txt` 看 driver 是 `driver`（不带 `../`）。
+`code/` 是 CubeMX 工程目录名（用户也可以用项目名如 `cs/`），driver/bsp/components/app 永远在 `code/` **里面**（与 Core/ Drivers/ 平级）。从 `code/CMakeLists.txt` 看 driver 是 `driver`（不带 `../`）。
 
 ### 顶层 `code/CMakeLists.txt` 长这样（CubeMX 6.17 实测）
 
@@ -147,7 +147,7 @@ Preset 干两件事：
 
 - 顶层 `CMakeLists.txt` 本质是"工程装配入口"，不是 CubeMX 的核心产物
 - CubeMX 已经在里面预留了空的 `target_sources` / `target_include_directories` 钩子，注释 `# Add user sources here`
-- AI 不动它的话，`driver/bsp/middleware/app/` 下的代码加不进编译
+- AI 不动它的话，`driver/bsp/components/app/` 下的代码加不进编译
 
 **AI 可以动的部分**：
 
@@ -166,9 +166,9 @@ Preset 干两件事：
 
 ---
 
-## 加 driver/bsp/middleware/app/sandbox 源文件
+## 加 driver/bsp/components/app/sandbox 源文件
 
-**推荐做法**：在顶层 `code/CMakeLists.txt` 的 `target_sources` 钩子里**显式**加源文件路径。driver/bsp/middleware/app 在 `code/` 里，路径直接写 `driver/foo.c`（不带 `../`）。
+**推荐做法**：在顶层 `code/CMakeLists.txt` 的 `target_sources` 钩子里**显式**加源文件路径。driver/bsp/components/app 在 `code/` 里，路径直接写 `driver/foo.c`（不带 `../`）。
 
 ```cmake
 # 顶层 code/CMakeLists.txt
@@ -177,8 +177,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     driver/driver_uart.c
     driver/driver_i2c.c
     bsp/bsp_mpu6050.c
-    middleware/utils/mw_ring_buffer.c
-    middleware/protocol/mw_frame_parser.c
+    components/utils/cmp_ring_buffer.c
+    components/protocol/cmp_frame_parser.c
     app/app_cli.c
     app/app_motion.c
 )
@@ -195,10 +195,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 > ```cmake
 > file(GLOB_RECURSE DRIVER_SRC     "${CMAKE_CURRENT_SOURCE_DIR}/driver/*.c")
 > file(GLOB_RECURSE BSP_SRC        "${CMAKE_CURRENT_SOURCE_DIR}/bsp/*.c")
-> file(GLOB_RECURSE MIDDLEWARE_SRC "${CMAKE_CURRENT_SOURCE_DIR}/middleware/*.c")
+> file(GLOB_RECURSE COMPONENTS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/components/*.c")
 > file(GLOB_RECURSE APP_SRC        "${CMAKE_CURRENT_SOURCE_DIR}/app/*.c")
 > file(GLOB_RECURSE SANDBOX_SRC    "${CMAKE_CURRENT_SOURCE_DIR}/sandbox/*.c")
-> target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${DRIVER_SRC} ${BSP_SRC} ${MIDDLEWARE_SRC} ${APP_SRC} ${SANDBOX_SRC})
+> target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${DRIVER_SRC} ${BSP_SRC} ${COMPONENTS_SRC} ${APP_SRC} ${SANDBOX_SRC})
 > ```
 >
 > 但 GLOB 加完文件**必须手动重跑 `cmake --preset Debug`**，否则新文件不进编译。SR8 提示用户重跑就是为这个。
@@ -265,15 +265,15 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
 ## include path 配置
 
-在顶层 `code/CMakeLists.txt` 的 `target_include_directories` 钩子里加（路径不带 `../`，driver/bsp/middleware/app 在 code/ 下）：
+在顶层 `code/CMakeLists.txt` 的 `target_include_directories` 钩子里加（路径不带 `../`，driver/bsp/components/app 在 code/ 下）：
 
 ```cmake
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     driver
     bsp
-    middleware
-    middleware/protocol
-    middleware/utils
+    components
+    components/protocol
+    components/utils
     app
     sandbox
 )
@@ -287,7 +287,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 ## 跨层 include 单向约束的实现
 
-SR6 要求：`app → middleware → bsp → driver`，禁止反向。
+SR6 要求：`app → components → bsp → driver`，禁止反向。
 
 **技术实现**：CMake 不直接支持"禁止某层 include 某层"。靠**命名约定 + 代码审查 + AI 自检**：
 
@@ -307,14 +307,14 @@ SR6 要求：`app → middleware → bsp → driver`，禁止反向。
    - driver/*.h
    - 同层 bsp/*.h
    - 标准库
-□ middleware/ 文件只 include：
-   - 同层 middleware/*.h（utils/ 与 protocol/ 互用）
+□ components/ 文件只 include：
+   - 同层 components/*.h（utils/ 与 protocol/ 互用）
    - 标准库
    - ❌ 禁止：HAL/CMSIS、driver/*.h、bsp/*.h、app/*.h
 □ app/ 文件只 include：
    - driver/*.h
    - bsp/*.h
-   - middleware/*.h
+   - components/*.h
    - 同层 app/*.h
    - 标准库
 ```
@@ -378,9 +378,9 @@ CubeMX 默认生成两个 preset：
 
 **SR8 触发条件**：
 
-- 在 `driver/bsp/middleware/app/sandbox/` 下**新增** `.c` 文件
-- 在 `driver/bsp/middleware/app/sandbox/` 下**删除** `.c` 文件
-- 在 `driver/bsp/middleware/app/sandbox/` 下**重命名** `.c` 文件
+- 在 `driver/bsp/components/app/sandbox/` 下**新增** `.c` 文件
+- 在 `driver/bsp/components/app/sandbox/` 下**删除** `.c` 文件
+- 在 `driver/bsp/components/app/sandbox/` 下**重命名** `.c` 文件
 - 在顶层 `code/CMakeLists.txt` 的 `target_sources` 里加了新的 HAL 源文件（如新启用 UART 模块）
 
 **不触发**（不需要提示重跑）：
