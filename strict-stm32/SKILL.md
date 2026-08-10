@@ -1,6 +1,6 @@
 ---
 name: strict-stm32
-description: STM32 嵌入式开发的强约束工作流 skill。基于"CubeMX 一次性产骨架 + AI 增量演进"架构，反幻觉（写代码前必读 HAL/CMSIS 头文件不凭记忆）、对话式询问关键硬件决策、HARDWARE.md 作为真相源强制同步。任何 STM32 工程需要添加外设（USART/I2C/SPI/ADC/TIMER/DMA/CAN/USB/QSPI）、写 driver/bsp/app 代码、修改硬件配置、集成传感器或显示器芯片时都应使用本 skill。即使用户没说"用 skill"，只要任务涉及 STM32 外设驱动、传感器 BSP、应用层业务逻辑实现，都应触发本 skill。新手配置第一个 LED 闪烁、老手做陀螺仪姿态解算，都走同一套工作流。
+description: STM32 嵌入式开发的强约束工作流 skill。基于"CubeMX 一次性产骨架 + AI 增量演进"架构，反幻觉（写代码前必读 HAL/CMSIS 头文件不凭记忆）、对话式询问关键硬件决策、HARDWARE.md 作为真相源强制同步。任何 STM32 工程需要添加外设（USART/I2C/SPI/ADC/TIMER/DMA/CAN/USB/QSPI）、写 driver/bsp/middleware/app 代码、修改硬件配置、集成传感器或显示器芯片时都应使用本 skill。即使用户没说"用 skill"，只要任务涉及 STM32 外设驱动、传感器 BSP、应用层业务逻辑实现，都应触发本 skill。新手配置第一个 LED 闪烁、老手做陀螺仪姿态解算，都走同一套工作流。
 ---
 
 # strict-stm32
@@ -20,16 +20,16 @@ STM32 嵌入式开发里，AI 凭记忆写底层代码的幻觉风险极高 —�
 本 skill 工程是**两层目录**结构：
 
 - **`project_root/`** —— AI 工作目录（用户 shell 的 cwd），只放 `.claude/`（Claude Code 配置）和 `code/`
-- **`project_root/code/`** —— CubeMX 工程目录（= `.ioc` 所在目录）= VSCode 工作区根 = CMake 项目根。**所有 AI 写的代码和文档都加在这里**（driver/bsp/app/sandbox/hw/tasks/HARDWARE.md/PROJECT.md）。`code/` 是 skill 文档里的占位名，用户实际项目可以叫 `cs/` `myapp/` 等 —— 但 driver/bsp/app 等 AI 加的内容**永远在 code/ 里面**，不在 project_root 下与 code/ 平级
+- **`project_root/code/`** —— CubeMX 工程目录（= `.ioc` 所在目录）= VSCode 工作区根 = CMake 项目根。**所有 AI 写的代码和文档都加在这里**（driver/bsp/middleware/app/sandbox/hw/tasks/HARDWARE.md/PROJECT.md）。`code/` 是 skill 文档里的占位名，用户实际项目可以叫 `cs/` `myapp/` 等 —— 但 driver/bsp/middleware/app 等 AI 加的内容**永远在 code/ 里面**，不在 project_root 下与 code/ 平级
 - **`project_root/code/Core/Inc`、`Core/Src`、`Drivers`、`cmake/`** —— CubeMX 6.10+ 的内部分层
 
 **为什么 AI 加的内容放进 code/ 里**：
 
-1. **VSCode 工作区一致性**：CMakeLists.txt 在 `code/`，用户用 VSCode 打开 `code/` 作为工作区根时，IntelliSense 才能索引到 driver/bsp/app 下的代码。如果放在 project_root 下与 code/ 平级，VSCode 打开 code/ 就看不到它们
-2. **CMake 相对路径简化**：driver/bsp/app 在 code/ 下，CMake 直接写 `driver/driver_led.c`，不用 `../driver/driver_led.c`
+1. **VSCode 工作区一致性**：CMakeLists.txt 在 `code/`，用户用 VSCode 打开 `code/` 作为工作区根时，IntelliSense 才能索引到 driver/bsp/middleware/app 下的代码。如果放在 project_root 下与 code/ 平级，VSCode 打开 code/ 就看不到它们
+2. **CMake 相对路径简化**：driver/bsp/middleware/app 在 code/ 下，CMake 直接写 `driver/driver_led.c`，不用 `../driver/driver_led.c`
 3. **项目结构紧凑**：所有项目相关的东西在 code/ 里，project_root 只剩 `.claude/`，干净
 
-**代价**：失去了"AI 代码与 CubeMX 产物的物理隔离"。但 CubeMX 重新生成时只动它自己生成的文件（`Core/` `Drivers/` `<project>.ioc` 等），不会动 AI 加的 `code/driver/` `code/bsp/` 这些目录 —— 实践中误伤风险很低。
+**代价**：失去了"AI 代码与 CubeMX 产物的物理隔离"。但 CubeMX 重新生成时只动它自己生成的文件（`Core/` `Drivers/` `<project>.ioc` 等），不会动 AI 加的 `code/driver/` `code/bsp/` `code/middleware/` 这些目录 —— 实践中误伤风险很低。
 
 > 用户在 CubeMX Project Manager 里把"Toolchain / IDE"选 CMake，"Project Name"填 `code`（或项目名如 `cs`），生成路径设到 `<project_root>/code/`。
 
@@ -66,6 +66,9 @@ project_root/                       # = AI 工作目录 = 用户 shell cwd
     │
     ├── driver/                     # AI 加（正式：通用驱动，如 driver_i2c.c）
     ├── bsp/                        # AI 加（正式：外设芯片驱动，如 bsp_mpu6050.c）
+    ├── middleware/                 # AI 加（正式：纯软件中间件，如 mw_ring_buffer.c）
+    │   ├── protocol/               # AI 加（协议：报文切帧、CRC、Modbus/自定义协议）
+    │   └── utils/                  # AI 加（工具：RingBuffer、FIFO、CRC 算法、调试日志）
     ├── app/                        # AI 加（正式：业务逻辑）
     ├── sandbox/                    # AI 加（脚手架：婴儿步验证用）
     ├── hw/
@@ -94,7 +97,7 @@ project_root/                       # = AI 工作目录 = 用户 shell cwd
 如果 `code/PROJECT.md` 不存在 → 进入初始化流程：
 
 1. 引导用户写 `code/PROJECT.md`（问：项目目标一句话？婴儿步路线图？）
-2. 在 `code/` 下创建目录骨架：`driver/ bsp/ app/ sandbox/ hw/datasheets/ tasks/`（**6 个目录必须同时建**，即使 `bsp/` 等暂时为空也要建占位，SR13）
+2. 在 `code/` 下创建目录骨架：`driver/ bsp/ middleware/(含 protocol/ utils/ 子目录) app/ sandbox/ hw/datasheets/ tasks/`（**7 个目录必须同时建**，即使 `bsp/` `middleware/` 等暂时为空也要建占位，SR13）
 3. 用 `assets/HARDWARE.md.tmpl` 创建空 `code/HARDWARE.md`
 4. 提示用户：打开 STM32CubeMX，选 MCU，配时钟树，**选 CMake + 复制所有库**，生成路径设到 `project_root/code/`（Project Name 填 `code` 或项目名 `cs` 等任意）
 
@@ -103,7 +106,7 @@ project_root/                       # = AI 工作目录 = 用户 shell cwd
 | 用户说 | 任务类型 | 代码归属 |
 |---|---|---|
 | "先试 / 试一下 / 验证 / test / check / 看看 XX 行不行" | 脚手架 | `sandbox/` |
-| "加 / 实现 / 写一个 XX 驱动 / 功能" | 正式功能 | `driver/` `bsp/` `app/` |
+| "加 / 实现 / 写一个 XX 驱动 / 功能" | 正式功能 | `driver/` `bsp/` `middleware/` `app/` |
 
 不确定就反问："这是脚手架验证，还是要写成正式代码？"
 
@@ -111,7 +114,7 @@ project_root/                       # = AI 工作目录 = 用户 shell cwd
 
 ### Step 3 — 知识收集（反幻觉核心）
 
-写任何 `driver/` `bsp/` 代码前，**必须**先 Read：
+写任何 `driver/` `bsp/` 代码前，**必须**先 Read（写 `middleware/` 纯逻辑代码**不需要**读 HAL —— middleware 不依赖硬件，其真值源是协议规范，见下方说明）：
 
 1. `code/Drivers/<芯片系列>_HAL_Driver/Inc/<对应外设>.h` — HAL API 真值
 2. `code/Drivers/CMSIS/Device/ST/<芯片系列>/Include/stm32<系列>.h` — 寄存器基地址宏
@@ -123,6 +126,13 @@ project_root/                       # = AI 工作目录 = 用户 shell cwd
    - 有 → Read 后写
    - 无 → **反问用户**："写 MPU6050 驱动需要 datasheet，请把 PDF 放到 `code/hw/datasheets/` 或给路径。"
    - 不允许凭训练记忆写冷门芯片
+
+写 `middleware/protocol/`（协议解析）代码前，真值源是**协议规范**而非 HAL：
+
+1. 查 `code/hw/datasheets/` 或用户提供的协议文档（Modbus 标准 / 自定义帧格式定义）
+   - 有 → Read 后写
+   - 无 → **反问用户**："协议帧格式怎么定义？帧头 / 长度字段 / 校验方式分别是什么？请给出帧格式定义或文档。"
+2. CRC 查标准规范（如 CRC-16/MODBUS 多项式 0x8005），不允许凭记忆写多项式
 
 **为什么**：AI 凭记忆写 STM32 底层代码是幻觉的主要来源 —— `USART2` 基地址、`GPIO_AF7` 在 H7 和 F4 上完全不一样。HAL 库源码（由 CubeMX 复制到 `code/Drivers/`）是 ST 官方验证过、与芯片 errata 同步的零幻觉知识源。强制读它就是反幻觉。
 
@@ -152,12 +162,13 @@ project_root/                       # = AI 工作目录 = 用户 shell cwd
 
 **正式功能任务**：
 
-- `driver/` `bsp/` `app/` 自由写（创建新文件）
+- `driver/` `bsp/` `middleware/` `app/` 自由写（创建新文件，middleware 文件用 `mw_` 前缀，如 `mw_ring_buffer.c`）
 - `code/Core/Src/main.c` 只在 `/* USER CODE BEGIN x */ ... /* USER CODE END x */` 段加调用
 - `code/Core/Src/stm32xx_it.c` 只在 USER CODE 段加 IRQHandler
 - `code/Core/Inc/stm32xx_hal_conf.h` 只动 `#define HAL_xxx_MODULE_ENABLED` 这类宏（其他不碰）
-- 跨层 include 单向：`app → bsp → driver`，反向禁止
+- 跨层 include 单向：`app → middleware → bsp → driver`，反向禁止
 - 共享外设（如 I2C1）单例：`bsp/` 层禁止直接碰 `hi2c1` 句柄，必须通过 `driver_i2c_*()` API
+- **Middleware 纯逻辑**：`middleware/` 层严禁 include HAL/CMSIS、`driver/`、`bsp/` 头文件；只接收 Byte 输入、输出 Struct，不触碰硬件句柄与业务逻辑；如需要把帧发给串口，由 app 层注册回调
 - **代码风格**：禁用泛化变量名（`temp` / `flag` / `data` / `count` / `val`），注释遵守奥斯特豪特原则（详见 SR11/SR12）
 
 **启用新外设时还必须**（CubeMX 没生成的情形）：
@@ -225,7 +236,7 @@ cmake --build build/Debug
 
 根据本次任务情况，主动给用户以下提示（适用的才提示）：
 
-- 加/删了 `code/driver/bsp/app/sandbox/` 下 `.c` 文件 → "需要重跑 `cmake --preset Debug && cmake --build build/Debug` 才会让文件列表生效"
+- 加/删了 `code/driver/bsp/middleware/app/sandbox/` 下 `.c` 文件 → "需要重跑 `cmake --preset Debug && cmake --build build/Debug` 才会让文件列表生效"
 - 启用了新的 `HAL_xxx_MODULE_ENABLED` 宏但忘了补 HAL 源 → 自查顶层 `target_sources` 是否含对应 `stm32f1xx_hal_uart.c` 等
 - 脚手架任务完成 → "code/sandbox/ 里的脚手架代码是否清理？"
 - 有死代码（注释掉的旧实现、未使用的 include、孤立的 static 函数）→ 列出来让用户决定删不删，**不强制清理**
@@ -233,7 +244,7 @@ cmake --build build/Debug
 
 ## 代码风格约束
 
-写 `code/driver/bsp/app/` 代码时必须遵守两条风格规则。和架构约束（SR1–SR10、SR13）不同，这两条是**可读性**约束，但同样强制。
+写 `code/driver/bsp/middleware/app/` 代码时必须遵守两条风格规则。和架构约束（SR1–SR10、SR13）不同，这两条是**可读性**约束，但同样强制。
 
 ### 窄命名原则（Narrow Names，SR11）
 
@@ -283,16 +294,16 @@ HAL_Delay(2);
 | SR1 | 改 `code/Core/Inc/stm32xx_hal_conf.h` 只动 `#define HAL_xxx_MODULE_ENABLED` 这类宏，其余一律不碰 |
 | SR2 | 禁止在 CubeMX 内启用/修改任何外设。CubeMX 仅用于首次工程生成 |
 | SR3 | 禁止修改 `code/Core/Src/main.c::SystemClock_Config()`。时钟改动强制走"重新跑 CubeMX"流程 |
-| SR4 | 写 `driver/` 或 `bsp/` 前必须先 Read `code/Drivers/` 下对应 HAL/CMSIS 头文件，基于真值写代码 |
+| SR4 | 写 `driver/` 或 `bsp/` 前必须先 Read `code/Drivers/` 下对应 HAL/CMSIS 头文件，基于真值写代码（middleware 除外：纯逻辑层，真值源是协议/帧格式定义，不读 HAL） |
 | SR5 | `bsp/` 层禁止直接碰外设句柄（`hi2c1` / `huart2` / ...），必须通过 `driver/` 层 API |
-| SR6 | include 单向：`app → bsp → driver`。bsp 不允许 include app，driver 不允许 include bsp |
+| SR6 | include 单向：`app → middleware → bsp → driver`。middleware 不允许 include bsp/driver/app；bsp 不允许 include middleware/app；driver 不允许 include 上层任何一层 |
 | SR7 | 任何修改硬件配置的任务，结束前必须同步更新 `code/HARDWARE.md`。不更新视为任务未完成 |
-| SR8 | 加/删 `code/driver/bsp/app/sandbox/` 下 `.c` 文件后，必须显式提示用户在 `code/` 下重跑 `cmake --preset Debug && cmake --build build/Debug` |
+| SR8 | 加/删 `code/driver/bsp/middleware/app/sandbox/` 下 `.c` 文件后，必须显式提示用户在 `code/` 下重跑 `cmake --preset Debug && cmake --build build/Debug` |
 | SR9 | 关键硬件决策缺失时必须对话式询问，每问必带理由，不允许默认值 |
 | SR10 | 不允许凭训练记忆写冷门外设芯片，必须先查 `code/hw/datasheets/`，无则问用户要 PDF |
 | SR11 | 禁用泛化变量名（`temp` / `flag` / `data` / `count` / `val`），必须用承载物理量或业务语义的窄命名 |
 | SR12 | 头文件 `.h` 注释只写 What（接口契约），源文件 `.c` 注释只写 Why（设计意图），严禁逐行翻译代码 |
-| SR13 | 项目代码必须按 `app/bsp/driver` 三层组织。项目初始化时三个目录必须同时建（即使 `bsp/` 暂时空着也要建占位）。业务代码不许跳过 `bsp/` 直接 driver ↔ app —— 即使当前只有 LED/UART 这种 MCU 内部外设，也要走 `app → driver`，等接外部芯片时 `bsp/` 自然填上，分层骨架一开始就立起来 |
+| SR13 | 项目代码必须按 `app/middleware/bsp/driver` 四层组织。项目初始化时四个目录必须同时建（`middleware/` 内含 `protocol/` `utils/` 子目录，即使暂时空着也要建占位）。业务代码不许跳过 `middleware/` `bsp/` 直接 driver ↔ app —— 即使当前只有 LED/UART 这种 MCU 内部外设，也要走 `app → driver`，等接外部芯片或协议时 `bsp/` `middleware/` 自然填上，分层骨架一开始就立起来 |
 
 ## Reference 索引（按需读，不要一开始就全读）
 

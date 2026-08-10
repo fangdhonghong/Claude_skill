@@ -22,7 +22,7 @@
 2. 配时钟树（SystemClock）
 3. 项目设置：**选 CMake** 作为构建系统
 4. **选"复制所有库"**（Copy all libraries）—— 把所有 HAL/CMSIS 源文件复制进 `code/Drivers/`
-5. 生成路径设到 `project_root/code/`（driver/bsp/app 等 AI 加的内容会建在 code/ 里）
+5. 生成路径设到 `project_root/code/`（driver/bsp/middleware/app 等 AI 加的内容会建在 code/ 里）
 
 生成出来的就是工程骨架。**此后禁止再用 CubeMX 启用/修改任何外设**。后续所有外设演进由 AI 通过手写 HAL/LL 代码 + 维护 CMake 完成。
 
@@ -48,7 +48,11 @@
 
 ```
 ┌────────────────────────────────────────────┐
-│  app/         业务逻辑（姿态解算、状态机）  │
+│  app/         业务逻辑（状态机、命令响应）  │
+└────────────────────────────────────────────┘
+       ↓ 调用
+┌────────────────────────────────────────────┐
+│  middleware/ 纯软件中间件（协议、数据结构）│
 └────────────────────────────────────────────┘
        ↓ 调用
 ┌────────────────────────────────────────────┐
@@ -64,29 +68,55 @@
 └────────────────────────────────────────────┘
 ```
 
-**物理位置**：app/bsp/driver/sandbox 都在 `code/` 下（与 `Core/` `Drivers/` 平级）；`code/` 是 CubeMX 工程目录 = VSCode 工作区根。CMake 里 driver 源文件路径直接写作 `driver/foo.c`，详见 `references/cmake.md`。
+**物理位置**：app/bsp/middleware/driver/sandbox 都在 `code/` 下（与 `Core/` `Drivers/` 平级）；`code/` 是 CubeMX 工程目录 = VSCode 工作区根。CMake 里 driver 源文件路径直接写作 `driver/foo.c`，详见 `references/cmake.md`。
 
 ### 各层职责
 
 | 层 | 职责 | 例 |
 |---|---|---|
-| `app/` | 应用层业务逻辑 | `app_motion.c`（姿态解算）、`app_state_machine.c` |
+| `app/` | 应用层业务逻辑 | `app_motion.c`（姿态解算）、`app_state_machine.c`、`app_cmd_handler.c` |
+| `middleware/` | 纯软件中间件：算法、通信协议栈、数据结构、系统服务 | `middleware/protocol/mw_frame_parser.c`、`middleware/utils/mw_ring_buffer.c` |
 | `bsp/` | 板级外设芯片驱动 | `bsp_mpu6050.c`、`bsp_oled_ssd1306.c`、`bsp_led.c` |
 | `driver/` | 通用外设驱动 | `driver_i2c.c`（包 HAL_I2C_*）、`driver_uart.c` |
 | `code/Drivers/` | HAL/CMSIS 静态库 | 由 CubeMX 复制，AI 只读 |
 
+### Middleware 层详解
+
+`middleware/` 是四层架构新增的纯软件层，分两个子目录：
+
+```
+middleware/
+├── protocol/       报文切帧、CRC 校验、Modbus/自定义协议解包（如 mw_modbus.c、mw_frame_parser.c）
+└── utils/          RingBuffer、FIFO、CRC 算法、调试日志（如 mw_ring_buffer.c、mw_crc16.c）
+```
+
+**核心规则**：
+
+- 必须是**纯粹的逻辑与数据转换**：只接收 `uint8_t` 字节流输入，输出解析好的 `struct` / 数据包
+- 严禁触碰业务逻辑，严禁 include 任何 `app_*.h` 头文件
+- 严禁 include HAL/CMSIS、`driver/`、`bsp/` 头文件 —— 中间件不感知任何硬件（串口、I2C 总线、寄存器都不存在）
+- 如果中间件需要把数据送出去（如把组装好的帧发给串口），通过 **app 层注册回调函数**实现，不在 middleware 里直接调用驱动
+
+**为什么加这一层**：
+
+- 协议解析（帧头 `0xAA 0x55`、CRC 校验、长度字段）是纯逻辑，与具体串口/总线无关 —— 放进 middleware 可以在 PC 上单测，也可以在换 MCU 时原样复用
+- 把"字节级拆包"从 app 层剥离后，app 只消费合法 Struct，业务代码干净且不重复实现协议
+- 与 driver/bsp 一样实现"底层不知道上层存在"：middleware 不知道数据从哪来、到哪里去
+
 ### 分层规则
 
-- `app/` 可以 include `bsp/` 和 `driver/`（但通常通过 bsp 间接用 driver）
-- `bsp/` 可以 include `driver/`，**不允许** include `app/`
-- `driver/` **不允许** include `bsp/` 或 `app/`
-- 任何层都可以 include `code/Drivers/` 的 HAL 头文件
+- `app/` 可以 include `bsp/`、`middleware/` 和 `driver/`（但通常通过 bsp/middleware 间接用 driver）
+- `middleware/` 可以 include 同层头文件（`utils/` 与 `protocol/` 互用），**不允许** include `bsp/`、`driver/`、`app/` 及 HAL/CMSIS
+- `bsp/` 可以 include `driver/`，**不允许** include `middleware/` 或 `app/`
+- `driver/` **不允许** include `bsp/`、`middleware/` 或 `app/`
+- 任何层都可以 include `code/Drivers/` 的 HAL 头文件（middleware 除外，见上）
 
 **为什么这么分**：
 
 - 让"通用驱动"（driver）可以跨项目复用 —— 下个项目换个 MCU，driver_i2c.c 改改就能用
 - 让"外设芯片驱动"（bsp）独立于应用 —— MPU6050 驱动既能给姿态解算用，也能给数据记录用
-- 让"业务逻辑"（app）独立于硬件细节 —— 改 MPU6050 为 ICM42688 时，app 层 API 不变
+- 让"协议与算法"（middleware）完全独立于硬件 —— 帧解析、CRC 在 PC 上也能测，换 MCU 原样复用
+- 让"业务逻辑"（app）独立于硬件细节 —— 改 MPU6050 为 ICM42688 时，app 层 API 不变；改协议时只动 middleware
 
 ## `code/` 的两个 AI 可动例外
 
@@ -115,7 +145,7 @@ AI 启用新外设时必须在这里取消对应宏的注释。
 
 ### 例外 2：`code/CMakeLists.txt`
 
-CubeMX 生成的 CMake 主入口。AI 在顶层 `target_sources` 钩子里追加 `driver/bsp/app/sandbox/` 下的源文件（直接写 `driver/foo.c`，不带 `../`），在 `target_include_directories` 里追加 `driver bsp app sandbox` 等 include path。
+CubeMX 生成的 CMake 主入口。AI 在顶层 `target_sources` 钩子里追加 `driver/bsp/middleware/app/sandbox/` 下的源文件（直接写 `driver/foo.c`，不带 `../`），在 `target_include_directories` 里追加 `driver bsp middleware app sandbox` 等 include path。
 
 详见 `references/cmake.md`。
 
@@ -162,7 +192,7 @@ int main(void) {
 
 **为什么不用 USER CODE 段堆代码**：
 
-短期看省事，但 `main.c` 必然膨胀成屎山。所有业务代码进 `driver/bsp/app/`，`main.c` 只做"装配"（init 调用 + 主循环 step 调用）。这样 `main.c` 永远干净，一眼能看出"这个项目做了什么"。
+短期看省事，但 `main.c` 必然膨胀成屎山。所有业务代码进 `driver/bsp/middleware/app/`，`main.c` 只做"装配"（init 调用 + 主循环 step 调用）。这样 `main.c` 永远干净，一眼能看出"这个项目做了什么"。
 
 ## 共享外设单例规则
 
@@ -207,12 +237,14 @@ uint8_t bsp_mpu6050_read(uint8_t reg) {
 
 ```
 app ──include──→ bsp ──include──→ driver ──include──→ code/Drivers/
+app ──include──→ middleware（middleware 内部互用，不 include 任何硬件层）
 ```
 
 **禁止反向**：
 
-- `bsp/` 不能 include `app/`
-- `driver/` 不能 include `bsp/` 或 `app/`
+- `middleware/` 不能 include `bsp/`、`driver/`、`app/`（纯逻辑，不感知硬件）
+- `bsp/` 不能 include `middleware/` 或 `app/`
+- `driver/` 不能 include `middleware/`、`bsp/` 或 `app/`
 
 **为什么**：
 

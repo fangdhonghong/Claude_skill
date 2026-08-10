@@ -46,7 +46,7 @@ ls project_root/
    - Project Name: code（或你的项目名）
    - Toolchain / IDE: **CMake**
    - Code Generator → 勾选 "Copy all the libraries into the project folder"
-   - 把生成路径设到 <project_root>/code/（未来的 driver/bsp/app 等会建在 code/ 里）
+   - 把生成路径设到 <project_root>/code/（未来的 driver/bsp/middleware/app 等会建在 code/ 里）
 5. 点 GENERATE CODE
 
 完成后告诉我，我接着帮你写 PROJECT.md 和初始化目录骨架。
@@ -76,7 +76,7 @@ ls project_root/
 ### Step 4：创建目录骨架
 
 ```bash
-mkdir -p driver bsp app sandbox hw/datasheets tasks
+mkdir -p driver bsp middleware middleware/protocol middleware/utils app sandbox hw/datasheets tasks
 ```
 
 ### Step 5：创建 HARDWARE.md
@@ -91,7 +91,7 @@ mkdir -p driver bsp app sandbox hw/datasheets tasks
 
 ### Step 6：改 code/CMakeLists.txt
 
-按 `references/cmake.md` 的说明，在顶层 `target_sources` 钩子追加 `driver/*.c` 等源文件（不带 `../`），在 `target_include_directories` 钩子追加 `driver bsp app sandbox` 等 include path。**不要动** `add_subdirectory(cmake/stm32cubemx)` 和其他 CubeMX 自动生成的部分。
+按 `references/cmake.md` 的说明，在顶层 `target_sources` 钩子追加 `driver/*.c` `middleware/**/*.c` 等源文件（不带 `../`），在 `target_include_directories` 钩子追加 `driver bsp middleware middleware/protocol middleware/utils app sandbox` 等 include path。**不要动** `add_subdirectory(cmake/stm32cubemx)` 和其他 CubeMX 自动生成的部分。
 
 ### Step 7：验证工具链
 
@@ -124,7 +124,7 @@ cmake --build build/Debug
   - .claude/                Claude Code 配置
   - code/                   CubeMX 工程 = VSCode 工作区根
     - Core/ Drivers/ cmake/ CMakeLists.txt 等 CubeMX 产物
-    - driver/bsp/app/       正式代码层（空，按需添加）
+    - driver/bsp/middleware/app/  正式代码层（middleware/ 内含 protocol/ utils/ 子目录，空，按需添加）
     - sandbox/              脚手架代码（空）
     - hw/datasheets/        外设 datasheet（空）
     - tasks/                任务日志（空）
@@ -160,7 +160,7 @@ Glob tasks/*.md
 ### Step 3：浏览代码结构
 
 ```bash
-Glob driver/*.c bsp/*.c app/*.c sandbox/*.c
+Glob driver/*.c bsp/*.c middleware/**/*.c app/*.c sandbox/*.c
 ```
 
 看每层有哪些文件，对项目代码结构有概览。

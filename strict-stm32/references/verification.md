@@ -69,7 +69,7 @@ strict-stm32 把每次 skill 调用分两类，**代码归属和文档归属都�
 | 任务类型 | 例 | 代码归属 | 影响 HARDWARE.md？ | 任务日志 |
 |---|---|---|---|---|
 | **脚手架**（验证硬件用，最终要删） | "先跑流水灯试 LED"、"串口回显试串口" | `sandbox/` | ❌ 不更新硬件配置 | 短期，验证后归档/删 |
-| **正式功能**（最终交付） | "加 MPU6050 驱动"、"实现串口控 LED" | `driver/` `bsp/` `app/` | ✅ 更新硬件配置 | 长期保留 |
+| **正式功能**（最终交付） | "加 MPU6050 驱动"、"实现串口控 LED"、"实现 Modbus 从站解析" | `driver/` `bsp/` `middleware/` `app/` | ✅ 更新硬件配置 | 长期保留 |
 
 ### 识别规则（按优先级）
 
@@ -123,7 +123,7 @@ sandbox/
 
 ### sandbox/ 代码的特点
 
-- **不依赖** `driver/bsp/app/`（自包含）
+- **不依赖** `driver/bsp/middleware/app/`（自包含）
 - 可以直接调 HAL（如 `HAL_GPIO_TogglePin(...)`）
 - 在 `main.c` 的 `USER CODE BEGIN 2` 段调用 `sandbox_led_test()`
 - 验证完成后可以删（或保留作为参考）

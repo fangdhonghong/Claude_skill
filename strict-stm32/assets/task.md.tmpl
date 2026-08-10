@@ -24,7 +24,7 @@
 
 ## 信息源（Read 过的文件）
 
-> 列出本次任务中 AI 实际 Read 的 HAL/CMSIS/datasheet 文件。这是反幻觉硬约束（SR4）的执行记录。
+> 列出本次任务中 AI 实际 Read 的 HAL/CMSIS/datasheet 文件（middleware 任务改为协议/帧格式文档）。这是反幻觉硬约束（SR4）的执行记录。
 
 - `code/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_i2c.h`
 - `code/Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_gpio_ex.h`
@@ -85,8 +85,8 @@
 ## CMake 影响
 
 - ⚠️ 本工程 cubemx 子目录 CMake 把 HAL 源文件硬编码在 `code/cmake/stm32cubemx/CMakeLists.txt` 的 `STM32_Drivers_Src` 变量里（按 `.ioc` 状态生成，没用 `file(GLOB)`）。**新增 HAL 源文件必须手动加到顶层 `code/CMakeLists.txt` 的 `target_sources`**。
-- ✅ `driver/`、`bsp/`、`app/` 源文件路径用 `driver/foo.c` 形式加到顶层 `target_sources`（driver/bsp/app 在 code/ 下，不带 `../`）
-- ✅ include path 用 `driver bsp app` 加到顶层 `target_include_directories`
+- ✅ `driver/`、`bsp/`、`middleware/`、`app/` 源文件路径用 `driver/foo.c` 形式加到顶层 `target_sources`（各层在 code/ 下，不带 `../`）
+- ✅ include path 用 `driver bsp middleware middleware/protocol middleware/utils app` 加到顶层 `target_include_directories`
 - ✅ 编译命令：`cd code/ && cmake --preset Debug && cmake --build build/Debug`（不是直接 `cmake -B build`，要走 preset 才用 `cmake/gcc-arm-none-eabi.cmake` 工具链）
 
 ---
